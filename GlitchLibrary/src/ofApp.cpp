@@ -8,8 +8,6 @@ void ofApp::setup(){
     s.internalformat = GL_RGB;
     
     combinedInputFbo.allocate(s);
-    analogFbo.allocate(s);
-    scramblerFbo.allocate(s);
     
     ofDirectory dataDir(ofToDataPath(""));
     if(!dataDir.exists()) {
@@ -70,89 +68,19 @@ void ofApp::setup(){
     reactiveGroup.add(highThreshold);
     gui.add(reactiveGroup);
 
-
-
     // 4. Master Control
     masterChaosGroup.setName("Master Control");
     masterChaos.set("Chaos Master", 0.0f, 0.0f, 1.0f);
     
     masterChaosGroup.add(masterChaos);
     gui.add(masterChaosGroup);
-    
-    analogGlitchGroup.setName("Analog Glitch");
-    bEnableAnalogGlitch.set("Enable Analog", false);
-    bEnableHarshAnalog.set("Harsh Mode", false);
-    analogWetDry.set("Wet/Dry", 0.0f, 0.0f, 1.0f);
-    analogDistortionAmount.set("Distortion", 0.0f, 0.0f, 1.0f);
-    analogGlitchGroup.add(bEnableAnalogGlitch);
-    analogGlitchGroup.add(bEnableHarshAnalog);
-    analogGlitchGroup.add(analogWetDry);
-    analogGlitchGroup.add(analogDistortionAmount);
-    gui.add(analogGlitchGroup);
-
-    scramblerGroup.setName("Scrambler");
-    bEnableScrambler.set("Enable Scrambler", false);
-    scrambleAmount.set("Scramble Amount", 0.0f, 0.0f, 1.0f);
-    scramblerGroup.add(bEnableScrambler);
-    scramblerGroup.add(scrambleAmount);
-    gui.add(scramblerGroup);
-
-    frameGlitchGroup.setName("Frame Glitch");
-    bEnableFrameGlitch.set("Enable Time Jump", false);
-    glitchProbability.set("Jump Probability", 0.05f, 0.0f, 1.0f);
-    maxFrameJump.set("Max Frame History", 60, 1, bufferSize - 1);
-    jumpJitter.set("Jump Jitter", 0.0f, 0.0f, 1.0f);
-    jumpFrequency.set("Jump Frequency", 1.0f, 0.1f, 5.0f);
-    frameGlitchGroup.add(bEnableFrameGlitch);
-    frameGlitchGroup.add(glitchProbability);
-    frameGlitchGroup.add(maxFrameJump);
-    frameGlitchGroup.add(jumpJitter);
-    frameGlitchGroup.add(jumpFrequency);
-    gui.add(frameGlitchGroup);
-
-    for(int i = 0; i < bufferSize; i++) {
-        ofFbo fbo; fbo.allocate(640, 480, GL_RGB);
-        frameBuffer.push_back(fbo);
-    }
-
-    string vert = "#version 120\n varying vec2 texCoordVarying; void main() { texCoordVarying = gl_MultiTexCoord0.xy; gl_Position = ftransform(); }\n";
-    string analogFrag = "#version 120\n uniform sampler2DRect tex; uniform float time; uniform float distortion; varying vec2 texCoordVarying; void main() { vec2 uv = texCoordVarying; uv.x += sin(uv.y * 0.02 + time * 2.0) * distortion * 30.0; gl_FragColor = texture2DRect(tex, uv); }\n";
-    analogShader.setupShaderFromSource(GL_VERTEX_SHADER, vert);
-    analogShader.setupShaderFromSource(GL_FRAGMENT_SHADER, analogFrag);
-    analogShader.linkProgram();
-    
-    string scramblerFrag = "#version 120\n uniform sampler2DRect tex; uniform float amount; varying vec2 texCoordVarying; void main() { vec2 uv = texCoordVarying; if(fract(uv.y * 0.02 + amount * 10.0) < amount) uv.x += amount * 300.0; gl_FragColor = texture2DRect(tex, uv); }\n";
-    scramblerShader.setupShaderFromSource(GL_VERTEX_SHADER, vert);
-    scramblerShader.setupShaderFromSource(GL_FRAGMENT_SHADER, scramblerFrag);
-    scramblerShader.linkProgram();
 }
 
 void ofApp::update(){
-
-
     // 2. Master Chaos Modulation
     float chaos = masterChaos.get();
     if (chaos > 0.0f) {
         glitchAmount.set(std::max(glitchAmount.get(), chaos));
-        
-        if (chaos > 0.15f) {
-            bEnableAnalogGlitch = true;
-            analogDistortionAmount.set(std::max(analogDistortionAmount.get(), ofMap(chaos, 0.15f, 1.0f, 0.2f, 1.0f)));
-            analogWetDry.set(std::max(analogWetDry.get(), ofMap(chaos, 0.15f, 1.0f, 0.2f, 1.0f)));
-            if (chaos > 0.6f) {
-                bEnableHarshAnalog = true;
-            }
-        }
-        if (chaos > 0.3f) {
-            bEnableScrambler = true;
-            scrambleAmount.set(std::max(scrambleAmount.get(), ofMap(chaos, 0.3f, 1.0f, 0.2f, 1.0f)));
-        }
-        if (chaos > 0.45f) {
-            bEnableFrameGlitch = true;
-            glitchProbability.set(std::max(glitchProbability.get(), ofMap(chaos, 0.45f, 1.0f, 0.1f, 0.9f)));
-            jumpJitter.set(std::max(jumpJitter.get(), ofMap(chaos, 0.45f, 1.0f, 0.1f, 1.0f)));
-            jumpFrequency.set(std::max(jumpFrequency.get(), ofMap(chaos, 0.45f, 1.0f, 0.5f, 5.0f)));
-        }
     }
 
     if(camToggle) vidGrabber.update();
@@ -218,58 +146,13 @@ void ofApp::update(){
     postGlitch->setVal(1, ofMap(glitchAmount.get(), 0, 1, 10.0, 100.0, true));
     // Generate ofxPostGlitch into combinedInputFbo
     postGlitch->generateFx();
-
-    // 1. Scrambler -> Analog -> Buffer
-    scramblerFbo.begin();
-    if(bEnableScrambler) {
-        scramblerShader.begin();
-        scramblerShader.setUniformTexture("tex", combinedInputFbo.getTexture(), 0);
-        scramblerShader.setUniform1f("amount", scrambleAmount);
-        combinedInputFbo.draw(0, 0);
-        scramblerShader.end();
-    } else {
-        combinedInputFbo.draw(0,0);
-    }
-    scramblerFbo.end();
-
-    analogFbo.begin();
-    if(bEnableAnalogGlitch) {
-        analogShader.begin();
-        analogShader.setUniformTexture("tex", scramblerFbo.getTexture(), 0);
-        analogShader.setUniform1f("time", ofGetElapsedTimef());
-        float d = bEnableHarshAnalog ? (ofRandomuf() > 0.9f ? ofRandom(0.1f, 0.5f) : 0.0f) : analogDistortionAmount.get();
-        analogShader.setUniform1f("distortion", d);
-        scramblerFbo.draw(0, 0);
-        analogShader.end();
-    } else {
-        scramblerFbo.draw(0, 0);
-    }
-    analogFbo.end();
-
-    frameBuffer[currentBufferIndex].begin();
-    analogFbo.draw(0, 0);
-    frameBuffer[currentBufferIndex].end();
-
-    // Update Indices for Time Jump
-    if (bEnableFrameGlitch) {
-        if (ofGetFrameNum() % (int)std::max(1.0f, 10.0f / jumpFrequency.get()) == 0 && ofRandom(1.0) < glitchProbability) {
-            float jitterEffect = ofSignedNoise(ofGetElapsedTimef() * 10.0) * jumpJitter * maxFrameJump;
-            int jump = (int)ofClamp(maxFrameJump + jitterEffect, 1, bufferSize - 1);
-            displayBufferIndex = (currentBufferIndex - jump + bufferSize) % bufferSize;
-        } else {
-            displayBufferIndex = currentBufferIndex;
-        }
-    } else {
-        displayBufferIndex = currentBufferIndex;
-    }
-    currentBufferIndex = (currentBufferIndex + 1) % bufferSize;
 }
 
 void ofApp::draw(){
     ofBackground(40);
     ofSetColor(255);
     
-    frameBuffer[displayBufferIndex].draw(0,0, ofGetWidth(), ofGetHeight());
+    combinedInputFbo.draw(0,0, ofGetWidth(), ofGetHeight());
     gui.draw();
     
     if(showDebug) contourFinder.draw();

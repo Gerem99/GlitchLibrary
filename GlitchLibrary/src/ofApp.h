@@ -14,8 +14,6 @@ public:
 
     // FBOs
     ofFbo combinedInputFbo;
-    ofFbo analogFbo;
-    ofFbo scramblerFbo;
 
     // Sources
     ofVideoGrabber vidGrabber;
@@ -56,30 +54,4 @@ public:
     float smoothedAmount = 0.0f;
     bool fileNeedsInit = false;
     bool currentFxStates[6] = {false, false, false, false, false, false};
-
-    // GlitchLibrary Custom Shaders
-    ofParameterGroup analogGlitchGroup;
-    ofParameter<bool> bEnableAnalogGlitch;
-    ofParameter<bool> bEnableHarshAnalog;
-    ofParameter<float> analogWetDry;
-    ofParameter<float> analogDistortionAmount;
-
-    ofParameterGroup scramblerGroup;
-    ofParameter<bool> bEnableScrambler;
-    ofParameter<float> scrambleAmount;
-
-    ofParameterGroup frameGlitchGroup;
-    ofParameter<bool> bEnableFrameGlitch;
-    ofParameter<float> glitchProbability;
-    ofParameter<int> maxFrameJump;
-    ofParameter<float> jumpJitter;
-    ofParameter<float> jumpFrequency;
-
-    int bufferSize = 60;
-    vector<ofFbo> frameBuffer;
-    int currentBufferIndex = 0;
-    int displayBufferIndex = 0;
-
-    ofShader analogShader;
-    ofShader scramblerShader;
 };
