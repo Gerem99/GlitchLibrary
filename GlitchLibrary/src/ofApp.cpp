@@ -28,6 +28,9 @@ void ofApp::setup(){
     
     postGlitch = std::make_unique<ofxPostGlitch>();
     postGlitch->setup(&combinedInputFbo);
+    for (int i = 0; i < 17; i++) {
+        postGlitch->setFx((ofxPostGlitchType)i, false);
+    }
     
     vidGrabber.setup(640, 480);
     
@@ -213,7 +216,7 @@ void ofApp::draw(){
     ofBackground(40);
     ofSetColor(255);
     
-    frameBuffer[displayBufferIndex].draw(0, ofGetHeight(), ofGetWidth(), -ofGetHeight());
+    frameBuffer[displayBufferIndex].draw(0,0, ofGetWidth(), ofGetHeight());
     gui.draw();
     
     if(showDebug) contourFinder.draw();
