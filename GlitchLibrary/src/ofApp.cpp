@@ -42,6 +42,7 @@ void ofApp::setup(){
     reactiveMode.set("Reactive Mode", false);
     motionThreshold.set("Motion Threshold", 0.01f, 0.0f, 0.1f);
     showDebug.set("Show Debug", false);
+    invertColor.set("Invert Color", false);
     
     mixerGroup.add(fileToggle);
     mixerGroup.add(fileOp);
@@ -51,6 +52,7 @@ void ofApp::setup(){
     mixerGroup.add(reactiveMode);
     mixerGroup.add(motionThreshold);
     mixerGroup.add(showDebug);
+    mixerGroup.add(invertColor);
     gui.add(mixerGroup);
     
     analogGlitchGroup.setName("Analog Glitch");
@@ -153,6 +155,7 @@ void ofApp::update(){
             currentFxStates[i] = newStates[i];
         }
     }
+    postGlitch->setFx(OFXPOSTGLITCH_INVERT, invertColor.get());
     
     // Setup required values for ofxPostGlitch shaders
     postGlitch->setVal(0, 0.0f);

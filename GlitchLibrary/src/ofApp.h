@@ -40,6 +40,7 @@ public:
     ofParameter<bool> reactiveMode;
     ofParameter<float> motionThreshold;
     ofParameter<bool> showDebug;
+    ofParameter<bool> invertColor;
 
     float smoothedAmount = 0.0f;
     bool fileNeedsInit = false;
