@@ -48,11 +48,6 @@ public:
     ofParameter<float> medThreshold;
     ofParameter<float> highThreshold;
 
-    // Presets Group
-    ofParameterGroup presetsGroup;
-    ofParameter<bool> presetMelt;
-    ofParameter<bool> presetShred;
-    ofParameter<bool> presetStatic;
 
     // Master Chaos
     ofParameterGroup masterChaosGroup;

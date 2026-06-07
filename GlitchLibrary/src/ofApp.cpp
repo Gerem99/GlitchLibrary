@@ -70,16 +70,7 @@ void ofApp::setup(){
     reactiveGroup.add(highThreshold);
     gui.add(reactiveGroup);
 
-    // 3. Chaos Presets
-    presetsGroup.setName("Chaos Presets");
-    presetMelt.set("Preset: Melt", false);
-    presetShred.set("Preset: Shred", false);
-    presetStatic.set("Preset: Static", false);
-    
-    presetsGroup.add(presetMelt);
-    presetsGroup.add(presetShred);
-    presetsGroup.add(presetStatic);
-    gui.add(presetsGroup);
+
 
     // 4. Master Control
     masterChaosGroup.setName("Master Control");
@@ -137,43 +128,7 @@ void ofApp::setup(){
 }
 
 void ofApp::update(){
-    // 1. Presets Logic
-    if (presetMelt) {
-        bEnableAnalogGlitch = true;
-        bEnableHarshAnalog = true;
-        analogWetDry = 0.8f;
-        analogDistortionAmount = 0.9f;
-        bEnableScrambler = true;
-        scrambleAmount = 0.4f;
-        bEnableFrameGlitch = false;
-        glitchAmount = 0.5f;
-        presetMelt = false;
-    } else if (presetShred) {
-        bEnableAnalogGlitch = false;
-        bEnableScrambler = true;
-        scrambleAmount = 0.8f;
-        bEnableFrameGlitch = true;
-        glitchProbability = 0.9f;
-        maxFrameJump = 55;
-        jumpJitter = 0.8f;
-        jumpFrequency = 4.5f;
-        glitchAmount = 0.7f;
-        presetShred = false;
-    } else if (presetStatic) {
-        bEnableAnalogGlitch = true;
-        bEnableHarshAnalog = false;
-        analogWetDry = 0.9f;
-        analogDistortionAmount = 0.3f;
-        bEnableScrambler = true;
-        scrambleAmount = 0.2f;
-        bEnableFrameGlitch = true;
-        glitchProbability = 0.3f;
-        maxFrameJump = 10;
-        jumpJitter = 0.1f;
-        jumpFrequency = 1.0f;
-        glitchAmount = 0.3f;
-        presetStatic = false;
-    }
+
 
     // 2. Master Chaos Modulation
     float chaos = masterChaos.get();
