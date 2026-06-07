@@ -36,6 +36,7 @@ void ofApp::setup(){
     
     gui.setup("Glitch Library");
     
+    // 1. Mixer & FX
     mixerGroup.setName("Mixer & FX");
     fileToggle.set("File Layer", false);
     fileOp.set("File Opacity", 255.0f, 0.0f, 255.0f);
@@ -43,8 +44,6 @@ void ofApp::setup(){
     camOp.set("Cam Opacity", 255.0f, 0.0f, 255.0f);
     glitchAmount.set("Glitch Amount", 0.0f, 0.0f, 1.0f);
     reactiveMode.set("Reactive Mode", false);
-    motionThreshold.set("Motion Threshold", 0.01f, 0.0f, 0.1f);
-    showDebug.set("Show Debug", false);
     invertColor.set("Invert Color", false);
     
     mixerGroup.add(fileToggle);
@@ -53,10 +52,41 @@ void ofApp::setup(){
     mixerGroup.add(camOp);
     mixerGroup.add(glitchAmount);
     mixerGroup.add(reactiveMode);
-    mixerGroup.add(motionThreshold);
-    mixerGroup.add(showDebug);
     mixerGroup.add(invertColor);
     gui.add(mixerGroup);
+
+    // 2. Reactive Mapping
+    reactiveGroup.setName("Reactive Mapping");
+    motionThreshold.set("Motion Threshold", 0.01f, 0.0f, 0.1f);
+    showDebug.set("Show Debug", false);
+    lowThreshold.set("Low Trigger Level", 0.15f, 0.0f, 1.0f);
+    medThreshold.set("Med Trigger Level", 0.40f, 0.0f, 1.0f);
+    highThreshold.set("High Trigger Level", 0.65f, 0.0f, 1.0f);
+    
+    reactiveGroup.add(motionThreshold);
+    reactiveGroup.add(showDebug);
+    reactiveGroup.add(lowThreshold);
+    reactiveGroup.add(medThreshold);
+    reactiveGroup.add(highThreshold);
+    gui.add(reactiveGroup);
+
+    // 3. Chaos Presets
+    presetsGroup.setName("Chaos Presets");
+    presetMelt.set("Preset: Melt", false);
+    presetShred.set("Preset: Shred", false);
+    presetStatic.set("Preset: Static", false);
+    
+    presetsGroup.add(presetMelt);
+    presetsGroup.add(presetShred);
+    presetsGroup.add(presetStatic);
+    gui.add(presetsGroup);
+
+    // 4. Master Control
+    masterChaosGroup.setName("Master Control");
+    masterChaos.set("Chaos Master", 0.0f, 0.0f, 1.0f);
+    
+    masterChaosGroup.add(masterChaos);
+    gui.add(masterChaosGroup);
     
     analogGlitchGroup.setName("Analog Glitch");
     bEnableAnalogGlitch.set("Enable Analog", false);
@@ -107,6 +137,69 @@ void ofApp::setup(){
 }
 
 void ofApp::update(){
+    // 1. Presets Logic
+    if (presetMelt) {
+        bEnableAnalogGlitch = true;
+        bEnableHarshAnalog = true;
+        analogWetDry = 0.8f;
+        analogDistortionAmount = 0.9f;
+        bEnableScrambler = true;
+        scrambleAmount = 0.4f;
+        bEnableFrameGlitch = false;
+        glitchAmount = 0.5f;
+        presetMelt = false;
+    } else if (presetShred) {
+        bEnableAnalogGlitch = false;
+        bEnableScrambler = true;
+        scrambleAmount = 0.8f;
+        bEnableFrameGlitch = true;
+        glitchProbability = 0.9f;
+        maxFrameJump = 55;
+        jumpJitter = 0.8f;
+        jumpFrequency = 4.5f;
+        glitchAmount = 0.7f;
+        presetShred = false;
+    } else if (presetStatic) {
+        bEnableAnalogGlitch = true;
+        bEnableHarshAnalog = false;
+        analogWetDry = 0.9f;
+        analogDistortionAmount = 0.3f;
+        bEnableScrambler = true;
+        scrambleAmount = 0.2f;
+        bEnableFrameGlitch = true;
+        glitchProbability = 0.3f;
+        maxFrameJump = 10;
+        jumpJitter = 0.1f;
+        jumpFrequency = 1.0f;
+        glitchAmount = 0.3f;
+        presetStatic = false;
+    }
+
+    // 2. Master Chaos Modulation
+    float chaos = masterChaos.get();
+    if (chaos > 0.0f) {
+        glitchAmount.set(std::max(glitchAmount.get(), chaos));
+        
+        if (chaos > 0.15f) {
+            bEnableAnalogGlitch = true;
+            analogDistortionAmount.set(std::max(analogDistortionAmount.get(), ofMap(chaos, 0.15f, 1.0f, 0.2f, 1.0f)));
+            analogWetDry.set(std::max(analogWetDry.get(), ofMap(chaos, 0.15f, 1.0f, 0.2f, 1.0f)));
+            if (chaos > 0.6f) {
+                bEnableHarshAnalog = true;
+            }
+        }
+        if (chaos > 0.3f) {
+            bEnableScrambler = true;
+            scrambleAmount.set(std::max(scrambleAmount.get(), ofMap(chaos, 0.3f, 1.0f, 0.2f, 1.0f)));
+        }
+        if (chaos > 0.45f) {
+            bEnableFrameGlitch = true;
+            glitchProbability.set(std::max(glitchProbability.get(), ofMap(chaos, 0.45f, 1.0f, 0.1f, 0.9f)));
+            jumpJitter.set(std::max(jumpJitter.get(), ofMap(chaos, 0.45f, 1.0f, 0.1f, 1.0f)));
+            jumpFrequency.set(std::max(jumpFrequency.get(), ofMap(chaos, 0.45f, 1.0f, 0.5f, 5.0f)));
+        }
+    }
+
     if(camToggle) vidGrabber.update();
     if(fileToggle && vidPlayer.isLoaded()) {
         if (fileNeedsInit) {
@@ -147,9 +240,14 @@ void ofApp::update(){
         glitchAmount.set(smoothedAmount);
     }
 
-    // Apply ofxPostGlitch from SimpleGlitchPrototype based on glitchAmount
+    // Apply ofxPostGlitch from SimpleGlitchPrototype based on glitchAmount and custom thresholds
     float amount = glitchAmount.get();
-    bool newStates[6] = { amount > 0.15, amount > 0.40, amount > 0.65, false, false, false };
+    bool newStates[6] = { 
+        amount > lowThreshold.get(), 
+        amount > medThreshold.get(), 
+        amount > highThreshold.get(), 
+        false, false, false 
+    };
     ofxPostGlitchType fxTypes[6] = { OFXPOSTGLITCH_NOISE, OFXPOSTGLITCH_CONVERGENCE, OFXPOSTGLITCH_SHAKER, OFXPOSTGLITCH_TWIST, OFXPOSTGLITCH_CUTSLIDER, OFXPOSTGLITCH_SLITSCAN };
 
     for(int i=0; i<6; i++) {

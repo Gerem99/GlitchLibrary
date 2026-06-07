@@ -38,9 +38,25 @@ public:
     ofParameter<float> camOp;
     ofParameter<float> glitchAmount;
     ofParameter<bool> reactiveMode;
+    ofParameter<bool> invertColor;
+
+    // Reactive parameters
+    ofParameterGroup reactiveGroup;
     ofParameter<float> motionThreshold;
     ofParameter<bool> showDebug;
-    ofParameter<bool> invertColor;
+    ofParameter<float> lowThreshold;
+    ofParameter<float> medThreshold;
+    ofParameter<float> highThreshold;
+
+    // Presets Group
+    ofParameterGroup presetsGroup;
+    ofParameter<bool> presetMelt;
+    ofParameter<bool> presetShred;
+    ofParameter<bool> presetStatic;
+
+    // Master Chaos
+    ofParameterGroup masterChaosGroup;
+    ofParameter<float> masterChaos;
 
     float smoothedAmount = 0.0f;
     bool fileNeedsInit = false;
