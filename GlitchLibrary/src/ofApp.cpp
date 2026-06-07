@@ -210,7 +210,7 @@ void ofApp::draw(){
     ofBackground(40);
     ofSetColor(255);
     
-    frameBuffer[displayBufferIndex].draw(0,0, ofGetWidth(), ofGetHeight());
+    frameBuffer[displayBufferIndex].draw(0, ofGetHeight(), ofGetWidth(), -ofGetHeight());
     gui.draw();
     
     if(showDebug) contourFinder.draw();
